@@ -1,0 +1,778 @@
+PROCEDURE "<your_schema>"."testes::rownum_test" 
+(
+	OUT RETORNO TABLE(
+			"LINHA" NVARCHAR(5000),
+			"CR" INTEGER
+	)
+) 
+	LANGUAGE SQLSCRIPT
+	SQL SECURITY INVOKER 
+	READS SQL DATA AS
+BEGIN
+
+
+	-----------------------------------------------------------------------------------------------------
+	--
+	--
+	--  SELEÇÃO NOTAS
+	--
+	--
+	-----------------------------------------------------------------------------------------------------
+	RELATORIO_NOTAS  = 
+						select 
+							"MANDT",
+							"EMPRESA",
+							"FILIAL",
+							"NF_ID",
+							"COD_NAT",
+							"CFOP",
+							"DIRECT",
+							"NUMERO_DOCUMENTO",
+							--"NUM_ITEM",
+							"SER",
+							"SUB",
+							"DT_DOC",
+							"DT_E_S",
+							"COD_PART",
+							"CANCELADO",
+							"IND_SERVICO",
+							"CNPJ_CPF",
+							"UF",
+							"IE_PARCEIRO", 
+					        "COD_MUN",
+					        "COD_MUN_ORIG",
+							"VL_ITEM_TOTAL",
+							"VL_BC_ICMS",
+							"VL_ICMS",
+							"VL_BC_EXC_ICMS",
+							"VL_BC_OUTRAS_ICMS",
+							"VL_ICMSST",
+							"VL_IPI",
+							"VL_OUT" 
+							from "TEST_RELATORIO_DUMMY" as CV_RELATORIO_ITENS; 
+
+	
+	NOTAS  = select 
+					 RELATORIO_NOTAS."MANDT",
+					 RELATORIO_NOTAS."EMPRESA",
+					 RELATORIO_NOTAS."FILIAL",
+					 RELATORIO_NOTAS."NF_ID",
+					 RELATORIO_NOTAS."COD_NAT",
+					 RELATORIO_NOTAS."CFOP",
+					 RELATORIO_NOTAS."NUMERO_DOCUMENTO",
+					 --RELATORIO_NOTAS."NUM_ITEM",
+					 RELATORIO_NOTAS."DIRECT",
+					 RELATORIO_NOTAS."SER",
+					 RELATORIO_NOTAS."SUB",
+					 RELATORIO_NOTAS."DT_DOC",
+					 RELATORIO_NOTAS."DT_E_S",
+					 '0' AS "CNPJ",
+					 '0' AS "IE",
+					 RELATORIO_NOTAS."IE_PARCEIRO",
+					 RELATORIO_NOTAS."COD_PART",
+					 RELATORIO_NOTAS."CNPJ_CPF",
+					 RELATORIO_NOTAS."UF",
+					 RELATORIO_NOTAS."COD_MUN",
+					 RELATORIO_NOTAS."COD_MUN_ORIG",
+					 RELATORIO_NOTAS."VL_ITEM_TOTAL",
+					 RELATORIO_NOTAS."VL_BC_ICMS",
+					 RELATORIO_NOTAS."VL_ICMS",
+					 RELATORIO_NOTAS."VL_BC_EXC_ICMS",
+					 RELATORIO_NOTAS."VL_BC_OUTRAS_ICMS",
+					 RELATORIO_NOTAS."VL_ICMSST",
+					 RELATORIO_NOTAS."VL_IPI",
+					 RELATORIO_NOTAS."VL_OUT"
+					 from :RELATORIO_NOTAS  as RELATORIO_NOTAS;
+
+	
+	
+	
+	
+	-----------------------------------------------------------------------------------------------------
+	--
+	--
+	-- CR 10
+	--
+	--
+	-----------------------------------------------------------------------------------------------------
+	CR_10_BASE = SELECT 
+						"MANDT",
+						"EMPRESA",
+						"FILIAL",
+						"COD_NAT",
+						"UF",
+						"IE_PARCEIRO" as "IE",
+						"COD_PART",
+						"NUMERO_DOCUMENTO",
+						'10' AS "CR", 
+						"VL_ITEM_TOTAL",
+						"VL_BC_ICMS",
+						"VL_ICMS",
+						"VL_BC_EXC_ICMS",
+						"VL_BC_OUTRAS_ICMS",
+						"VL_ICMSST",
+						"VL_IPI",
+						"VL_OUT",
+						0 AS "IMPOSTO_RETIDO_ST",
+						CASE 
+								WHEN 
+									SUBSTRING("COD_NAT",0,4) = '1360'  OR
+								 	SUBSTRING("COD_NAT",0,4) = '5360'  OR
+								 	SUBSTRING("COD_NAT",0,4) = '6360'  OR
+								 	SUBSTRING("COD_NAT",0,4) = '6360'  OR
+								    (SUBSTRING("COD_NAT",0,4) >= '1401' AND SUBSTRING("COD_NAT",0,4) <= '1499') OR
+								    (SUBSTRING("COD_NAT",0,4) >= '1651' AND SUBSTRING("COD_NAT",0,4) <= '1699') OR
+								    SUBSTRING("COD_NAT",0,2) = '19'  OR
+								    (SUBSTRING("COD_NAT",0,4) >= '2401' AND SUBSTRING("COD_NAT",0,4) <= '2449') OR
+								    (SUBSTRING("COD_NAT",0,4) >= '2651' AND SUBSTRING("COD_NAT",0,4) <= '2699') OR
+								    SUBSTRING("COD_NAT",0,2) = '29'  OR
+								   	(SUBSTRING("COD_NAT",0,4) >= '5401' AND SUBSTRING("COD_NAT",0,4) <= '5449') OR
+								    (SUBSTRING("COD_NAT",0,4) >= '5651' AND SUBSTRING("COD_NAT",0,4) <= '5699') OR
+									SUBSTRING("COD_NAT",0,2) = '59'  OR
+								    (SUBSTRING("COD_NAT",0,4) >= '6401' AND SUBSTRING("COD_NAT",0,4) <= '5699') OR
+									(SUBSTRING("COD_NAT",0,4) >= '6551' AND SUBSTRING("COD_NAT",0,4) <= '6699') OR
+								    SUBSTRING("COD_NAT",0,2) = '69'
+								THEN "VL_ICMSST" 
+								ELSE
+									0
+						END AS "IMPOSTO_SUBSTITUTO_ST",
+						0 AS "IMPOSTO_RETIDO_SUBSTITUIDO",
+						"VL_IPI" + "VL_OUT" AS "OUTROS_IMPOSTOS"
+						FROM :NOTAS;
+			
+	CR_10_AGREGACAO  = select  
+										SUM("VL_ITEM_TOTAL") as "VL_ITEM_TOTAL", 
+										SUM("VL_BC_ICMS") as "VL_BC_ICMS", 
+										SUM("VL_ICMS") as "VL_ICMS", 
+										SUM("VL_BC_EXC_ICMS") as "VL_BC_EXC_ICMS", 
+										SUM("VL_BC_OUTRAS_ICMS") as "VL_BC_OUTRAS_ICMS", 
+										SUM("VL_ICMSST") as "VL_ICMSST", 
+										SUM("OUTROS_IMPOSTOS") as "OUTROS_IMPOSTOS", 
+										SUM("VL_IPI") as "VL_IPI", 
+										SUM("IMPOSTO_SUBSTITUTO_ST") as "IMPOSTO_SUBSTITUTO_ST",
+										SUM("IMPOSTO_RETIDO_ST") as "IMPOSTO_RETIDO_ST",
+										SUM("IMPOSTO_RETIDO_SUBSTITUIDO") as "IMPOSTO_RETIDO_SUBSTITUIDO",
+										"MANDT",
+										"EMPRESA",
+										"FILIAL",
+										"CR",
+										"COD_NAT" 
+								from :CR_10_BASE 
+								group by 
+								"MANDT",
+								"EMPRESA",
+								"FILIAL",
+								"CR",
+								"COD_NAT";
+			
+	CR_10_SEM_Q14  = 
+							select 
+									"MANDT",
+									"EMPRESA",
+									"FILIAL",
+									ROW_NUMBER() OVER () AS  "ROWNUM_CR10",
+									"CR",
+									"COD_NAT",
+									"VL_ITEM_TOTAL" AS "VALOR_CONTABIL",
+									"VL_BC_ICMS" AS "BASE_CALCULO",
+									"VL_ICMS" AS "IMPOSTO",
+									"VL_BC_EXC_ICMS" AS "ISENTAS_NAO_TRIBUTADAS",
+									"VL_BC_OUTRAS_ICMS" AS "OUTRAS",
+									"IMPOSTO_RETIDO_ST" AS "IMPOSTO_RETIDO",
+									"IMPOSTO_SUBSTITUTO_ST",
+									"IMPOSTO_RETIDO_SUBSTITUIDO",
+									"OUTROS_IMPOSTOS" 
+							from :CR_10_AGREGACAO;
+
+	-----------------------------------------------------------------------------------------------------
+	--
+	--
+	-- CR 14
+	--
+	--
+	-----------------------------------------------------------------------------------------------------
+			
+	CR_14_INIT  = select 
+						  "ROWNUM_CR10",
+						  CR_10_BASE."MANDT", 
+						  CR_10_BASE."EMPRESA", 
+						  CR_10_BASE."FILIAL", 
+						  CR_10_BASE."COD_NAT",
+						  "UF",
+						  "IE",
+						  "COD_PART",
+						  "VL_ITEM_TOTAL",
+						  "VL_BC_ICMS",
+						  "VL_ICMS",
+						  "VL_BC_OUTRAS_ICMS",
+						  "VL_ICMSST",
+						  "VL_OUT",
+						  "VL_IPI" 
+					from :CR_10_BASE  as CR_10_BASE 
+					left outer join :CR_10_SEM_Q14  as CR_10_SEM_Q14 
+					on CR_10_BASE."MANDT" = CR_10_SEM_Q14."MANDT" and 
+				    CR_10_BASE."EMPRESA" = CR_10_SEM_Q14."EMPRESA" and 
+				    CR_10_BASE."FILIAL" = CR_10_SEM_Q14."FILIAL" and 
+				    CR_10_BASE."COD_NAT" = CR_10_SEM_Q14."COD_NAT";
+			
+			
+	CR_14  = select 
+					"ROWNUM_CR10",
+					"MANDT",
+					"EMPRESA",
+					"FILIAL",
+					14 AS  "CR",
+					"COD_NAT",
+					"UF",
+					"IE",
+					"COD_PART", 
+					substring("COD_NAT",0,1)  AS  "INICIO_CFOP",
+					"VL_ITEM_TOTAL" AS "VL_ITEM_TOTAL",
+					"VL_BC_ICMS" AS "VL_BC_ICMS",
+					"VL_ICMS" AS "VL_ICMS",
+					"VL_BC_OUTRAS_ICMS" AS "VL_BC_OUTRAS_ICMS",
+					"VL_ICMSST" AS "VL_ICMSST",
+					"VL_OUT" AS "VL_OUT",
+					"VL_IPI" AS "VL_IPI"
+				from :CR_14_INIT 
+				where  substring("COD_NAT",0,1) = '2' OR substring("COD_NAT",0,1) = '6' ;
+	
+	CR_14_SEPARAR_ISENTOS = select 
+						"ROWNUM_CR10",
+						"MANDT",
+						"EMPRESA",
+						"FILIAL",
+						"CR",
+						"COD_NAT",
+						(CASE 
+								WHEN "UF" = 'AC' THEN	'01'
+								WHEN "UF" = 'AL' THEN	'02'
+								WHEN "UF" = 'AP' THEN	'03'
+								WHEN "UF" = 'AM' THEN	'04'
+								WHEN "UF" = 'BA' THEN	'05'
+								WHEN "UF" = 'CE' THEN	'06'
+								WHEN "UF" = 'DF' THEN	'07'
+								WHEN "UF" = 'ES' THEN	'08'
+								WHEN "UF" = 'GO' THEN	'10'
+								WHEN "UF" = 'MA' THEN	'12'
+								WHEN "UF" = 'MT' THEN	'13'
+								WHEN "UF" = 'MS' THEN	'28'
+								WHEN "UF" = 'MG' THEN	'14'
+								WHEN "UF" = 'PA' THEN	'15'
+								WHEN "UF" = 'PB' THEN	'16'
+								WHEN "UF" = 'PR' THEN	'17'
+								WHEN "UF" = 'PE' THEN	'18'
+								WHEN "UF" = 'PI' THEN	'19'
+								WHEN "UF" = 'RJ' THEN	'22'
+								WHEN "UF" = 'RN' THEN	'20'
+								WHEN "UF" = 'RS' THEN	'21'
+								WHEN "UF" = 'RO' THEN	'23'
+								WHEN "UF" = 'RR' THEN	'24'
+								WHEN "UF" = 'SC' THEN	'25'
+								WHEN "UF" = 'SP' THEN	'26'
+								WHEN "UF" = 'SE' THEN	'27'
+								WHEN "UF" = 'TO' THEN	'29'
+				  	    END) 
+				  	    AS 
+						"UF",
+						"IE",
+						"COD_PART", 
+						"INICIO_CFOP",
+						"VL_ITEM_TOTAL",
+						"VL_BC_ICMS",
+						"VL_ICMS",
+						"VL_BC_OUTRAS_ICMS",
+						"VL_ICMSST",
+						"VL_OUT",
+						"VL_IPI",
+							CASE 
+								WHEN ( "IE" != 'ISENTO' AND "IE" != 'ISENTA' AND "IE" != '' ) OR SUBSTRING("COD_NAT",0,1) = '2'
+									THEN	"VL_ITEM_TOTAL"
+								ELSE
+								0	
+							END  AS "CR_14_VALOR_CONTABIL_1",
+
+							CASE 
+								WHEN ( "IE" != 'ISENTO' AND "IE" != 'ISENTA' AND "IE" != '' )  OR SUBSTRING("COD_NAT",0,1) = '2'
+									THEN	"VL_BC_ICMS"
+								ELSE
+								0	
+							END  AS "CR_14_BASE_CALCULO_1",
+							
+							CASE 
+								WHEN ("IE" = 'ISENTO' OR "IE" = 'ISENTA' OR "IE" = '')  AND SUBSTRING("COD_NAT",0,1) != '2'
+									THEN	"VL_ITEM_TOTAL"
+								ELSE
+								0	
+							END  AS "CR_14_VALOR_CONTABIL_2",
+							
+							CASE 
+								WHEN ("IE" = 'ISENTO' OR "IE" = 'ISENTA' OR "IE" = '' ) AND SUBSTRING("COD_NAT",0,1) != '2'
+									THEN	"VL_BC_ICMS"
+								ELSE
+								0	
+							END  AS "CR_14_BASE_CALCULO_2",
+								
+							"VL_BC_OUTRAS_ICMS" AS "CR_14_OUTROS",
+						
+							CASE 
+								WHEN 
+									  SUBSTRING("COD_NAT",0,1) = '6'
+								THEN 
+									  "VL_ICMSST"
+								ELSE
+									0	
+							END AS "CR_14_ICMS_COBRADO_ST"
+							FROM :CR_14;
+			
+								
+								
+	NOVA_CR_14_AGREGACAO  = select  
+									SUM("VL_ITEM_TOTAL") as "VL_ITEM_TOTAL", 
+									SUM("VL_BC_ICMS") as "VL_BC_ICMS", 
+									SUM("VL_ICMS") as "VL_ICMS", 
+									SUM("VL_BC_OUTRAS_ICMS") as "VL_BC_OUTRAS_ICMS", 
+									SUM("VL_ICMSST") as "VL_ICMSST", 
+									SUM("VL_OUT") as "VL_OUT", 
+									SUM("VL_IPI") as "VL_IPI",
+									SUM("CR_14_VALOR_CONTABIL_1") AS "CR_14_VALOR_CONTABIL_1",
+									SUM("CR_14_BASE_CALCULO_1") AS "CR_14_BASE_CALCULO_1",
+									SUM("CR_14_VALOR_CONTABIL_2") AS "CR_14_VALOR_CONTABIL_2",
+									SUM("CR_14_BASE_CALCULO_2") AS "CR_14_BASE_CALCULO_2",
+									SUM("CR_14_OUTROS") AS "CR_14_OUTROS",
+									SUM("CR_14_ICMS_COBRADO_ST") AS "CR_14_ICMS_COBRADO_ST",
+									MIN("COD_NAT") AS "COD_NAT",
+									
+									"ROWNUM_CR10",
+									"MANDT",
+									"EMPRESA",
+									"FILIAL",
+									"CR",
+									"UF"--,
+									--Contador para CR10
+									--COUNT("CR") AS "Q14"
+							from :CR_14_SEPARAR_ISENTOS group by 
+									"ROWNUM_CR10",
+									"MANDT",
+									"EMPRESA",
+									"FILIAL",
+									"CR",
+									"UF";
+---------------------
+--- Contador Q14 do C10
+--------------------									
+	CR_14_CONTADOR_REPETIDO = SELECT "MANDT","EMPRESA","FILIAL",
+								"COD_NAT","UF",1 AS "Q14"
+								FROM :NOVA_CR_14_AGREGACAO
+								GROUP BY "MANDT","EMPRESA","FILIAL",
+								"COD_NAT","UF";
+	CR_14_CONTADOR =  SELECT "MANDT","EMPRESA","FILIAL",
+						"COD_NAT", SUM("Q14") AS "Q14"
+						FROM :CR_14_CONTADOR_REPETIDO
+						GROUP BY "MANDT","EMPRESA","FILIAL","COD_NAT";
+	
+				
+
+	CR_10_FINAL = SELECT 
+						"CR_10_SEM_Q14"."MANDT",
+						"CR_10_SEM_Q14"."EMPRESA",
+						"CR_10_SEM_Q14"."FILIAL",
+						"CR_10_SEM_Q14"."ROWNUM_CR10",
+						"CR_10_SEM_Q14"."CR",
+						"CR_10_SEM_Q14"."COD_NAT",
+						"CR_10_SEM_Q14"."VALOR_CONTABIL",
+						"CR_10_SEM_Q14"."BASE_CALCULO",
+						"CR_10_SEM_Q14"."IMPOSTO",
+						"CR_10_SEM_Q14"."ISENTAS_NAO_TRIBUTADAS",
+						"CR_10_SEM_Q14"."OUTRAS",
+						"CR_10_SEM_Q14"."IMPOSTO_RETIDO",
+						"CR_10_SEM_Q14"."IMPOSTO_SUBSTITUTO_ST",
+						"CR_10_SEM_Q14"."IMPOSTO_RETIDO_SUBSTITUIDO",
+						"CR_10_SEM_Q14"."OUTROS_IMPOSTOS",
+						"Q14"
+					 FROM
+					:CR_10_SEM_Q14 AS CR_10_SEM_Q14
+					left outer join
+					:CR_14_CONTADOR AS CR_14_CONTADOR
+					ON CR_10_SEM_Q14."MANDT" = CR_14_CONTADOR."MANDT" and 
+				    CR_10_SEM_Q14."EMPRESA" = CR_14_CONTADOR."EMPRESA" and 
+				    CR_10_SEM_Q14."FILIAL" = CR_14_CONTADOR."FILIAL" and 
+				    CR_10_SEM_Q14."COD_NAT" = CR_14_CONTADOR."COD_NAT";
+------------------
+--- Retomando Geração CR14
+------------------				    
+												
+			
+	CR_14_ORDENACAO  = select 
+								"ROWNUM_CR10",
+								ROW_NUMBER() OVER () AS "ROWNUM_CR14",
+								"MANDT",
+								"EMPRESA",
+								"FILIAL",
+								"CR",
+								"COD_NAT",
+								"UF",
+								"VL_ITEM_TOTAL",
+								"VL_BC_ICMS",
+								"VL_ICMS",
+								"VL_BC_OUTRAS_ICMS",
+								"VL_ICMSST",
+								"VL_OUT",
+								"VL_IPI",
+								"CR_14_VALOR_CONTABIL_1",
+								"CR_14_BASE_CALCULO_1",
+								"CR_14_VALOR_CONTABIL_2",
+								"CR_14_BASE_CALCULO_2",
+								"CR_14_OUTROS",
+								"CR_14_ICMS_COBRADO_ST"
+								from :NOVA_CR_14_AGREGACAO;
+
+	CR_10_14_DESORDENADO =
+										SELECT 
+													"ROWNUM_CR10",
+													"MANDT",
+													"EMPRESA",
+													"FILIAL",
+													"CR",
+													"COD_NAT",
+													
+													-- CAMPOS CR_10
+													"VALOR_CONTABIL",
+													"BASE_CALCULO",
+													"IMPOSTO",
+													"ISENTAS_NAO_TRIBUTADAS",
+													"OUTRAS",
+													"IMPOSTO_RETIDO",
+													"IMPOSTO_SUBSTITUTO_ST",
+													"IMPOSTO_RETIDO_SUBSTITUIDO",
+													"OUTROS_IMPOSTOS",
+													
+													-- CAMPOS CR_14
+													NULL AS "ROWNUM_CR14",
+													'' AS "UF",
+													'' AS "IE",
+											  		'' AS "COD_PART",
+													0 AS "VL_ITEM_TOTAL",
+													0 AS "VL_BC_ICMS",
+													0 AS "VL_ICMS",
+													0 AS "VL_BC_OUTRAS_ICMS",
+													0 AS "VL_ICMSST",
+													0 AS "VL_OUT",
+													0 AS "VL_IPI",
+													0 AS "PETROLEO_ENERGIA",
+													0 AS "OUTROS_PRODUTOS",
+													''AS "BENEF",
+													--Campos renomeados
+													0 as "CR_14_VALOR_CONTABIL_1",
+													0 as "CR_14_BASE_CALCULO_1",
+													0 as "CR_14_VALOR_CONTABIL_2",
+													0 as "CR_14_BASE_CALCULO_2",
+													0 as "CR_14_OUTROS",
+													0 as "CR_14_ICMS_COBRADO_ST",						
+													"Q14",
+													NULL AS "Q18"
+													FROM :CR_10_FINAL
+										
+										UNION ALL
+	
+										SELECT 		
+													"ROWNUM_CR10",
+													"MANDT",
+													"EMPRESA",
+													"FILIAL",
+													"CR",
+													"COD_NAT",
+													
+													-- CAMPOS CR_10
+											  		0 AS "VALOR_CONTABIL",
+													0 AS "BASE_CALCULO",
+													0 AS "IMPOSTO",
+													0 AS "ISENTAS_NAO_TRIBUTADAS",
+													0 AS "OUTRAS",
+													0 AS "IMPOSTO_RETIDO",
+													0 AS "IMPOSTO_SUBSTITUTO_ST",
+													0 AS "IMPOSTO_RETIDO_SUBSTITUIDO",
+													0 AS "OUTROS_IMPOSTOS",
+											  		
+											  		-- CAMPOS CR_14
+											  		"ROWNUM_CR14",
+											  		"UF",
+											  		'' AS "IE",
+											  		'' AS "COD_PART",
+											  		"VL_ITEM_TOTAL",
+											  		"VL_BC_ICMS",
+											  		"VL_ICMS",
+											  		"VL_BC_OUTRAS_ICMS",
+											  		"VL_ICMSST",
+											  		"VL_OUT",
+													"VL_IPI",
+											  		0 AS "PETROLEO_ENERGIA",
+											  		0 AS "OUTROS_PRODUTOS",
+											  		'' AS "BENEF",
+											  		---
+  													"CR_14_VALOR_CONTABIL_1",
+													"CR_14_BASE_CALCULO_1",
+													"CR_14_VALOR_CONTABIL_2",
+													"CR_14_BASE_CALCULO_2",
+													"CR_14_OUTROS",
+													"CR_14_ICMS_COBRADO_ST",		
+											  		NULL AS "Q14",
+											  		--Q18 NAO GERADO AINDA
+											  		NULL AS "Q18"										  		
+											   		FROM :CR_14_ORDENACAO
+								    ;
+	/*CR_10_14_UF = SELECT * FROM
+					:CR_10_14_DESORDENADO				
+				   	ORDER BY "ROWNUM_CR10","UF",ROWNUM_CR14; -- "CR";*/
+	
+	CR_10_14 = SELECT * FROM
+					:CR_10_14_DESORDENADO				
+				   	ORDER BY "ROWNUM_CR10","UF",ROWNUM_CR14; -- "CR";
+			
+			
+	CR_10_14_FINAL = 
+					 select 
+					 		ROW_NUMBER() OVER () AS  "ROWNUM_CR_10_14",
+					 		"ROWNUM_CR10" as "ROWNUM_CR_10",
+					 		"ROWNUM_CR14",
+							"MANDT",
+							"EMPRESA",
+							"FILIAL",
+							
+							"CR",
+							"COD_NAT",
+							
+							-- CAMPOS CR_10 
+							"VALOR_CONTABIL",
+							"BASE_CALCULO",
+							"IMPOSTO",
+							"ISENTAS_NAO_TRIBUTADAS",
+							"OUTRAS",
+							"IMPOSTO_RETIDO",
+							"IMPOSTO_SUBSTITUTO_ST",
+							"IMPOSTO_RETIDO_SUBSTITUIDO",
+							"OUTROS_IMPOSTOS",
+							
+							-- CAMPOS CR_14 
+							"UF",
+							"IE",
+							"COD_PART",
+							"CR_14_VALOR_CONTABIL_1",
+							"CR_14_BASE_CALCULO_1",
+							"CR_14_VALOR_CONTABIL_2",
+							"CR_14_BASE_CALCULO_2",
+							"VL_ICMS" AS "CR_14_IMPOSTO",
+							"CR_14_OUTROS",
+							"CR_14_ICMS_COBRADO_ST",
+							"PETROLEO_ENERGIA" AS "CR_14_PETROLEO_ENERGIA",
+							"OUTROS_PRODUTOS" AS "CR_14_OUTROS_PRODUTOS",
+							"BENEF" AS "CR_14_BENEF",
+							"VL_ITEM_TOTAL",
+							"VL_BC_ICMS",
+							"VL_ICMSST",
+							"VL_BC_OUTRAS_ICMS",
+							"VL_OUT",
+							"VL_IPI",
+							"Q14"
+							FROM :CR_10_14;
+	
+			
+			CR_10_CR_14_CR_18 = SELECT * FROM (
+						 SELECT 
+								"MANDT",
+								"EMPRESA",
+								"FILIAL",
+								"ROWNUM_CR_10_14",
+								"ROWNUM_CR_10",
+								"ROWNUM_CR14",
+								NULL AS "ROWNUM_CR_18",
+								"CR",
+								"COD_NAT",
+								
+								-- CAMPOS CR_10 --
+								"VALOR_CONTABIL",
+								"BASE_CALCULO",
+								"IMPOSTO",
+								"ISENTAS_NAO_TRIBUTADAS",
+								"OUTRAS",
+								"IMPOSTO_RETIDO",
+								"IMPOSTO_SUBSTITUTO_ST",
+								"IMPOSTO_RETIDO_SUBSTITUIDO",
+								"OUTROS_IMPOSTOS",
+								
+								-- CAMPOS CR_14 -- 
+								"UF",
+								"IE",
+								"COD_PART",
+								"CR_14_VALOR_CONTABIL_1",
+								"CR_14_BASE_CALCULO_1",
+								"CR_14_VALOR_CONTABIL_2",
+								"CR_14_BASE_CALCULO_2",
+								"CR_14_IMPOSTO",
+								"CR_14_OUTROS",
+								"CR_14_ICMS_COBRADO_ST",
+								"CR_14_PETROLEO_ENERGIA",
+								"CR_14_OUTROS_PRODUTOS",
+								"CR_14_BENEF"
+
+						 		FROM :CR_10_14_FINAL
+				) ORDER BY "ROWNUM_CR_10_14" ,"ROWNUM_CR14";
+				
+
+	
+	
+	
+	-----------------------------------------------------------------------------------------------------
+	-- MONTA_LINHAS
+	-----------------------------------------------------------------------------------------------------
+
+	
+	-------------------------------------------------------------
+	-- CR 10,18,20,25 e 30 
+	-------------------------------------------------------------
+	
+	LINHAS_CR_10_14_18_DESORDENADO = 
+							SELECT 
+								CASE
+									WHEN "CR" = '10' 
+										THEN "CR" ||
+											--CFOP DEVE TER 6 DIGITOS, COM ZEROS A ESQUERDA
+											 RPAD(SUBSTRING(IFNULL("COD_NAT",'0'),0,4),6,0)  ||
+											 LPAD(REPLACE(REPLACE(TO_CHAR(TO_DECIMAL(IFNULL("VALOR_CONTABIL",0),13,2)),'.',''),'-',''),15,0) ||
+											 LPAD(REPLACE(REPLACE(TO_CHAR(TO_DECIMAL(IFNULL("BASE_CALCULO",0),13,2)),'.',''),'-',''),15,0) ||
+											 LPAD(REPLACE(REPLACE(TO_CHAR(TO_DECIMAL(IFNULL("IMPOSTO",0),13,2)),'.',''),'-',''),15,0) ||
+											 LPAD(REPLACE(REPLACE(TO_CHAR(TO_DECIMAL(IFNULL("ISENTAS_NAO_TRIBUTADAS",0),13,2)),'.',''),'-',''),15,0) ||
+											 LPAD(REPLACE(REPLACE(TO_CHAR(TO_DECIMAL(IFNULL("OUTRAS",0),13,2)),'.',''),'-',''),15,0) ||
+											 '000000000000000' ||
+											 LPAD(REPLACE(REPLACE(TO_CHAR(TO_DECIMAL(IFNULL("IMPOSTO_SUBSTITUTO_ST",0),13,2)),'.',''),'-',''),15,0) ||
+											 '000000000000000' ||
+											 LPAD(REPLACE(REPLACE(TO_CHAR(TO_DECIMAL(IFNULL("OUTROS_IMPOSTOS",0),13,2)),'.',''),'-',''),15,0) ||
+											 CHAR(13) || CHAR(10)
+											 			
+									WHEN "CR" = '14'
+										THEN "CR" || 
+											"UF" ||
+											LPAD(REPLACE(REPLACE(TO_CHAR(TO_DECIMAL(IFNULL("CR_14_VALOR_CONTABIL_1",0),13,2)),'.',''),'-',''),15,0) ||
+											LPAD(REPLACE(REPLACE(TO_CHAR(TO_DECIMAL(IFNULL("CR_14_BASE_CALCULO_1",0),13,2)),'.',''),'-',''),15,0) ||
+											LPAD(REPLACE(REPLACE(TO_CHAR(TO_DECIMAL(IFNULL("CR_14_VALOR_CONTABIL_2",0),13,2)),'.',''),'-',''),15,0) ||
+											LPAD(REPLACE(REPLACE(TO_CHAR(TO_DECIMAL(IFNULL("CR_14_BASE_CALCULO_2",0),13,2)),'.',''),'-',''),15,0) ||								 
+											LPAD(REPLACE(REPLACE(TO_CHAR(TO_DECIMAL(IFNULL("CR_14_IMPOSTO",0),13,2)),'.',''),'-',''),15,0) ||	
+											LPAD(REPLACE(REPLACE(TO_CHAR(TO_DECIMAL(IFNULL("CR_14_OUTROS",0),13,2)),'.',''),'-',''),15,0) ||	
+											LPAD(REPLACE(REPLACE(TO_CHAR(TO_DECIMAL(IFNULL("CR_14_ICMS_COBRADO_ST",0),13,2)),'.',''),'-',''),15,0) ||	
+											LPAD(REPLACE(REPLACE(TO_CHAR(TO_DECIMAL(IFNULL("CR_14_PETROLEO_ENERGIA",0),13,2)),'.',''),'-',''),15,0) ||	
+											LPAD(REPLACE(REPLACE(TO_CHAR(TO_DECIMAL(IFNULL("CR_14_OUTROS_PRODUTOS",0),13,2)),'.',''),'-',''),15,0) ||	
+											LPAD(TO_CHAR(IFNULL((SELECT CASE WHEN COUNT(*) > 0 THEN '1' ELSE '0' END AS "CONT" FROM :CR_10_CR_14_CR_18 WHERE "CR" = '18'),0)),1,0) ||	
+											CHAR(13) || CHAR(10)
+		 							 			 
+								END AS "LINHA",
+								"CR",
+								"ROWNUM_CR_10_14" ,"ROWNUM_CR14", "ROWNUM_CR_18"
+								
+							 FROM :CR_10_CR_14_CR_18  ;
+							 
+	
+	LINHAS_CR_10_14_18 = SELECT  "LINHA",
+								"CR"
+								 FROM :LINHAS_CR_10_14_18_DESORDENADO
+								 ORDER BY "ROWNUM_CR_10_14" ,"ROWNUM_CR14", "ROWNUM_CR_18";
+							 
+		 
+						 
+	UNIAO_CR_10_14_18_20_25_30 = SELECT *  FROM :LINHAS_CR_10_14_18;
+				
+
+
+
+	CR_05_INIT = 
+				SELECT TOP 1
+				--Concatenar 0 com CHAR(13) e CHAR(10) some o 0
+						'05' AS "CR_AUX",
+						SUBSTRING("IE",0,12) AS "IE",
+						"CNPJ",
+						'0000000' AS "CNAE",
+						LPAD('02',2,0) AS "REG_TRIB",
+						SUBSTRING('20140901',0,6)  AS "REF",
+						'000000' AS "REF_INICIAL",
+						LPAD('02',2,0) AS "TIPO",
+						'1' AS "MOVIMENTO",
+						'01' AS "TRANSMITIDA",
+						
+						
+						0 AS "SALDO_CREDOR_PERIODO_ANTERIOR_ST",
+						
+						'09433094000167' AS "ORIGEM_SOFTWARE",
+						'0' AS "ORIGEM_PRE_DIG",
+						'000000000000000' AS "ICMS_FIX_PER",
+						'00000000000000000000000000000000' AS "CHAVE_INTERNA",
+						'0000' AS "Q07",
+						LPAD(TO_CHAR((SELECT TO_CHAR(COUNT(*)) AS "CONT" FROM :CR_10_CR_14_CR_18 WHERE "CR" = '10')),4,0) AS "Q10",
+						--'0000' AS "Q20",
+						0 AS "Q20",
+						'0000' AS "Q30",
+						'0000' AS "Q31"
+						
+				FROM :NOTAS;
+				
+				
+				
+		CR_05 = SELECT 
+						"CR_AUX" ||
+						"IE" ||
+						"CNPJ" ||
+						"CNAE" ||
+						"REG_TRIB" ||
+						"REF" ||
+						"REF_INICIAL" ||
+						"TIPO" ||
+						"MOVIMENTO" ||
+						"TRANSMITIDA" ||
+						LPAD(REPLACE(TO_DECIMAL(0,13,2),'.',''),15,0) ||
+						LPAD(REPLACE(TO_DECIMAL(0,13,2),'.',''),15,0) ||
+						"ORIGEM_SOFTWARE" ||
+						"ORIGEM_PRE_DIG" ||
+						"ICMS_FIX_PER" ||
+						"CHAVE_INTERNA" ||
+						"Q07" ||
+						"Q10" ||
+						"Q20" ||
+						"Q30" ||
+						"Q31" ||
+						CHAR(13) || CHAR(10)
+						AS "LINHA",
+						'05' as "CR"
+				FROM :CR_05_INIT;	
+						 
+	-----------------------------------------------------------------------------------------------------
+	--
+	--
+	--  REGISTRO MESTRE CR_01
+	--
+	--
+	-----------------------------------------------------------------------------------------------------
+	
+	CR_01 = SELECT 
+							  '01' ||
+							  '01' ||
+							  replace(substring(to_char(now()),0,10),'-','') ||
+							  replace(substring(to_char(now()),12,8),':','') ||
+							  '0000' ||
+							  '0210' ||
+							  LPAD(TO_CHAR((SELECT TO_CHAR(COUNT(*)) AS "CONT" FROM :CR_05)),4,0) 
+							  || CHAR(13) || CHAR(10)
+							  AS "LINHA",
+							  01 AS "CR" 
+							  FROM DUMMY;
+
+	TODOS_REGISTROS  = 
+						SELECT * FROM :CR_01
+						UNION ALL
+						SELECT *  FROM :CR_05
+						UNION ALL
+						SELECT *  FROM :UNIAO_CR_10_14_18_20_25_30;	
+	
+	RETORNO = 
+			  	SELECT  
+				  		 "LINHA",
+				  		 "CR"
+				  		 FROM :TODOS_REGISTROS;
+END;
